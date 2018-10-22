@@ -15,3 +15,5 @@ services:
     build:
       context: .
       dockerfile: LoginAPI/Dockerfile
+    depends_on:
+      - mssql
