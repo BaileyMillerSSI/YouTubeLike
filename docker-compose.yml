@@ -1,0 +1,57 @@
+version: '3.4'
+
+services:
+  mssql:
+    image: mcr.microsoft.com/mssql/server
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=BaileyWasHere1234!
+
+  authapi:
+    image: authapi
+    container_name: "authapi_service"
+    ports:
+      - "9090:80"
+    build:
+      context: .
+      dockerfile: LoginAPI/Dockerfile
+    environment:
+      - CleanDatabase="'False'"
+    depends_on:
+      - mssql
+    
+  mysql:
+    image: mysql:5.7
+    container_name: video_mysql_db
+    ports:
+    - "3306:3306"
+    volumes: 
+       - db_data:/var/lib/mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: "root"
+      MYSQL_HOST: "localhost"
+      MYSQL_ROOT_HOST: "%"
+    restart: on-failure
+
+  searchapi:
+    image: searchapi
+    container_name: "videoapi_service"
+    ports:
+      - "9191:80"
+    build:
+      context: .
+      dockerfile: VideoSearchApi/Dockerfile
+    depends_on:
+      - authapi
+      - mysql
+
+  videoprovder:
+    image:  videoapi
+    container_name: "videoprovider_service"
+    ports:
+      - "9292:80"
+    build:
+      context: .
+      dockerfile: VideoProvider/Dockerfile
+volumes:
+  db_data: 

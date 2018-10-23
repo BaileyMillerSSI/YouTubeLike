@@ -129,7 +129,7 @@ namespace LoginAPI
             }
 
             app.UseCors("CorsPolicy");
-
+            app.UseAuthentication();
             app.UseMvc();
 
 

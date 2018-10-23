@@ -50,13 +50,25 @@ namespace LoginAPI.Controllers
                     .Select(x => x.Role)
                     .Select(x => new Claim(ClaimTypes.Role, x.Description)).ToList();
 
-                return Ok(BuildToken(_DB.Users.Where(x=>x.Email == model.Email).FirstOrDefault(), roles));
+
+
+                var TokenSecurity = GetToken(_DB.Users.Where(x => x.Email == model.Email).FirstOrDefault(), roles);
+
+
+                return Ok(new
+                {
+                    Token = new JwtSecurityTokenHandler().WriteToken(TokenSecurity),
+                    IssuedAt = TokenSecurity.ValidFrom,
+                    ExpiresAt = TokenSecurity.ValidTo,
+                    model.Email,
+                    Message = "Have a nice day!"
+            });
             }
 
             return badLogin;
         }
 
-        private string BuildToken(User user, List<Claim> claims)
+        private JwtSecurityToken GetToken(User user, List<Claim> claims)
         {
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_Config["Jwt:Key"]));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
@@ -66,10 +78,11 @@ namespace LoginAPI.Controllers
                new JwtSecurityToken(_Config["Jwt:Issuer"],
               _Config["Jwt:Issuer"],
               claims,
+              notBefore: DateTime.Now,
               expires: DateTime.Now.AddMinutes(30),
               signingCredentials: creds);
 
-            return new JwtSecurityTokenHandler().WriteToken(token);
+            return token;
         }
     }
 }
