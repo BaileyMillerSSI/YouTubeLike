@@ -3,10 +3,9 @@ version: '3.4'
 services:
   mssql:
     image: mcr.microsoft.com/mssql/server
-    enivornment:
+    environment:
       - ACCEPT_EULA=Y
       - SA_PASSWORD=BaileyWasHere1234!
-    name: youtube_like_mssql_database
     ports:
       - "1433:1433"
 
