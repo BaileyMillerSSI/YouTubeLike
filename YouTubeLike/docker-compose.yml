@@ -6,13 +6,15 @@ services:
     environment:
       - ACCEPT_EULA=Y
       - SA_PASSWORD=BaileyWasHere1234!
-    ports:
-      - "1433:1433"
 
-  loginapi:
-    image: ${DOCKER_REGISTRY}loginapi
+  authapi:
+    image: authapi
+    container_name: "authapi_service"
+    ports:
+      - "9090:80"
     build:
       context: .
       dockerfile: LoginAPI/Dockerfile
     depends_on:
       - mssql
+    

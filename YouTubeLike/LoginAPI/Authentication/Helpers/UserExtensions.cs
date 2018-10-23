@@ -9,7 +9,7 @@ namespace LoginAPI.Authentication.Helpers
 {
     public static class UserExtensions
     {
-        public async static Task<(String Hash, Byte[] Salt)> GetUserHashInformation(this IdentityContext DB, String Email)
+        public async static Task<(String Hash, Byte[] Salt)> GetUserHashInformationAsync(this IdentityContext DB, String Email)
         {
             var hashInfo = await DB.Users
                 .Where(x => x.Email == Email)
@@ -30,9 +30,9 @@ namespace LoginAPI.Authentication.Helpers
             }
         }
 
-        public async static Task<bool> VerifiyPassword(this IdentityContext DB, String Email, String InputPassword)
+        public async static Task<bool> VerifiyPasswordAsync(this IdentityContext DB, String Email, String InputPassword)
         {
-            var hashInfo = await GetUserHashInformation(DB, Email);
+            var hashInfo = await GetUserHashInformationAsync(DB, Email);
 
             return HashHelpers.VerifiyPassword(InputPassword, hashInfo.Salt, hashInfo.Hash);
 
