@@ -23,7 +23,7 @@ namespace LoginAPI.Authentication.Helpers
         const int KeySize = 256 * 8;
         public static bool VerifiyPassword(String InputPassword, byte[] OriginalSalt, String DB_Hash)
         {
-            var GenerateNewHash = GenerateHash(InputPassword, OriginalSalt);
+            var GenerateNewHash = GenerateHash((String.IsNullOrEmpty(InputPassword) ? String.Empty : InputPassword), OriginalSalt);
 
             return DB_Hash.Equals(GenerateNewHash);
         }

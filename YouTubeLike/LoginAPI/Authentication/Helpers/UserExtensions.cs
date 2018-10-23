@@ -11,6 +11,7 @@ namespace LoginAPI.Authentication.Helpers
     {
         public async static Task<(String Hash, Byte[] Salt)> GetUserHashInformationAsync(this IdentityContext DB, String Email)
         {
+
             var hashInfo = await DB.Users
                 .Where(x => x.Email == Email)
                 .Select(x => x.Credentials)
@@ -35,7 +36,11 @@ namespace LoginAPI.Authentication.Helpers
             var hashInfo = await GetUserHashInformationAsync(DB, Email);
 
             return HashHelpers.VerifiyPassword(InputPassword, hashInfo.Salt, hashInfo.Hash);
+        }
 
+        public static bool UserExists(this DbSet<User> Users, String Email)
+        {
+            return Users.Where(x => x.Email == Email).Count() != 0;
         }
     }
 }

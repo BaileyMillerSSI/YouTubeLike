@@ -45,25 +45,22 @@ namespace LoginAPI.Controllers
             
             if (await _DB.VerifiyPasswordAsync(model.Email, model.Password))
             {
-                return Ok(BuildToken(_DB.Users.Where(x=>x.Email == model.Email).FirstOrDefault()));
+                var roles = _DB.Users.Where(x => x.Email == model.Email)
+                    .SelectMany(x => x.Roles)
+                    .Select(x => x.Role)
+                    .Select(x => new Claim(ClaimTypes.Role, x.Description)).ToList();
+
+                return Ok(BuildToken(_DB.Users.Where(x=>x.Email == model.Email).FirstOrDefault(), roles));
             }
 
-            return Ok();
+            return badLogin;
         }
 
-        private string BuildToken(User user)
+        private string BuildToken(User user, List<Claim> claims)
         {
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_Config["Jwt:Key"]));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-
-            var claims = new List<Claim> {
-                new Claim(JwtRegisteredClaimNames.Email, user.Email),
-            };
-
-
-            var allRoles = user.Roles.Select(x => new Claim(ClaimTypes.Role, x.Role.Description));
-
-            claims.AddRange(allRoles.ToList());
+        
 
             var token = 
                new JwtSecurityToken(_Config["Jwt:Issuer"],
