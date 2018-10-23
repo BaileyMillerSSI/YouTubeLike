@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 using LoginAPI.Authentication;
@@ -10,6 +11,7 @@ using LoginAPI.Authentication.Helpers;
 using LoginAPI.Authentication.Tables;
 using LoginAPI.Models;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
@@ -24,11 +26,13 @@ namespace LoginAPI.Controllers
 
         private readonly IdentityContext _DB;
         private readonly IConfiguration _Config;
+        private readonly IHostingEnvironment Env;
 
-        public LoginController(IdentityContext DB, IConfiguration Config)
+        public LoginController(IdentityContext DB, IConfiguration Config, IHostingEnvironment env)
         {
             _DB = DB;
             _Config = Config;
+            Env = env;
 
         }
 
@@ -70,7 +74,13 @@ namespace LoginAPI.Controllers
 
         private JwtSecurityToken GetToken(User user, List<Claim> claims)
         {
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_Config["Jwt:Key"]));
+            var rsaHelper = new RsaKeyHelpers(this.Env, this._Config);
+            // Persist the Keys
+            var Keys = rsaHelper.TryGetOrGenerateKeys();
+
+            var _KeysRsa = new RSACryptoServiceProvider();
+            _KeysRsa.FromxmlString(Keys.PrivateKey);
+            var key = new RsaSecurityKey(_KeysRsa.ExportParameters(true));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
         
 

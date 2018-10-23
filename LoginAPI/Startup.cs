@@ -23,12 +23,14 @@ namespace LoginAPI
     public class Startup
     {
 
-        public Startup(IConfiguration configuration)
+        public Startup(IConfiguration configuration, IHostingEnvironment env)
         {
             Configuration = configuration;
+            Env = env;
         }
 
         public IConfiguration Configuration { get; }
+        public IHostingEnvironment Env;
 
         // This method gets called by the runtime. Use this method to add services to the container.
         // For more information on how to configure your application, visit https://go.microsoft.com/fwlink/?LinkID=398940
@@ -47,11 +49,12 @@ namespace LoginAPI
                 .Build());
             });
 
+            var rsaHelper = new RsaKeyHelpers(Env, Configuration);
             // Persist the Keys
-            var Keys = TryGetOrGenerateKeys();
+            var Keys = rsaHelper.TryGetOrGenerateKeys();
 
             var _KeysRsa = new RSACryptoServiceProvider();
-            _KeysRsa.FromXmlString(Keys.PrivateKey);
+            _KeysRsa.FromxmlString(Keys.PublicKey);
             
             services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             .AddJwtBearer(options =>
@@ -64,7 +67,7 @@ namespace LoginAPI
                     ValidateIssuerSigningKey = true,
                     ValidIssuer = Configuration["Jwt:Issuer"],
                     ValidAudience = Configuration["Jwt:Issuer"],
-                    IssuerSigningKey = new RsaSecurityKey(_KeysRsa.ExportParameters(true))
+                    IssuerSigningKey = new RsaSecurityKey(_KeysRsa.ExportParameters(false))
                 };
             });
             
@@ -128,43 +131,7 @@ namespace LoginAPI
             }
         }
 
-        private (String PrivateKey, String PublicKey) TryGetOrGenerateKeys()
-        {
-            var privateKey = "";
-            var publicKey = "";
-
-            var Keys = RsaKeyHelpers.GenerateKeys();
-            
-            using (var keyRef = File.Open(Configuration.GetSection("Keys:Public").Value, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.Read))
-            {
-                if (keyRef.Length == 0)
-                {
-                    var buf = Encoding.UTF8.GetBytes(Keys.PublicKey);
-                    keyRef.Write(buf, 0, buf.Length);
-                    keyRef.Flush();
-                }
-                using (var reader = new StreamReader(keyRef))
-                {
-                    publicKey = reader.ReadToEnd();
-                }
-            }
-
-            using (var keyRef = File.Open(Configuration.GetSection("Keys:Private").Value, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.Read))
-            {
-                if (keyRef.Length == 0)
-                {
-                    var buf = Encoding.UTF8.GetBytes(Keys.PrivateKey);
-                    keyRef.Write(buf, 0, buf.Length);
-                    keyRef.Flush();
-                }
-                using (var reader = new StreamReader(keyRef))
-                {
-                    privateKey = reader.ReadToEnd();
-                }
-            }
-
-            return (privateKey, publicKey);
-        }
+        
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IHostingEnvironment env)
